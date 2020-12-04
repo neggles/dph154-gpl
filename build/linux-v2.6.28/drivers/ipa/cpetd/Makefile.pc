@@ -1,0 +1,49 @@
+#-------------------------------------------------------------------
+# CPE Timebase Device Driver makefile
+# Copyright (c) 2007 ip.access Ltd
+#-------------------------------------------------------------------
+
+# Comment/uncomment the following line to enable/disable debugging
+DEBUG = y
+
+ifeq ($(DEBUG),y)
+  DEBFLAGS = -O -g -DCPETD_DEBUG # "-O" is needed to expand inlines
+else
+  DEBFLAGS = -O2
+endif
+
+CFLAGS += $(DEBFLAGS) -I$(LDDINC)
+
+TARGET = cpetd
+
+        
+ifneq ($(KERNELRELEASE),)
+
+cpetd-objs := cpetd_main.o
+
+obj-m	:= cpetd.o
+
+else
+
+KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+PWD       := $(shell pwd)
+
+modules:
+	$(MAKE) -C $(KERNELDIR) ARCH=i386 M=$(PWD) LDDINC=$(PWD) modules
+endif
+
+
+install:
+	install -d $(INSTALLDIR)
+	install -c $(TARGET).o $(INSTALLDIR)
+
+clean:
+	rm -rf *.o *~ core .depend .*.cmd *.ko *.mod.c .tmp_versions
+
+
+depend .depend dep:
+	$(CC) $(CFLAGS) -M *.c > .depend
+
+ifeq (.depend,$(wildcard .depend))
+include .depend
+endif

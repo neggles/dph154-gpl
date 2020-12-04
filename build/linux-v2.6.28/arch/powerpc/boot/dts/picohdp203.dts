@@ -1,0 +1,348 @@
+/*
+ * MPC8560 ADS Device Tree Source
+ *
+ * Copyright 2006, 2008 Freescale Semiconductor Inc.
+ *
+ * This program is free software; you can redistribute  it and/or modify it
+ * under  the terms of  the GNU General  Public License as published by the
+ * Free Software Foundation;  either version 2 of the  License, or (at your
+ * option) any later version.
+ */
+
+/dts-v1/;
+
+/ {
+	model = "MPC8560ADS";
+	compatible = "MPC8560ADS", "MPC85xxADS";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+		ethernet0 = &enet0;
+		ethernet1 = &enet1;
+		serial0 = &serial0;
+		serial1 = &serial1;
+		pci0 = &pci0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		PowerPC,8560@0 {
+			device_type = "cpu";
+			reg = <0x0>;
+			d-cache-line-size = <32>;	// 32 bytes
+			i-cache-line-size = <32>;	// 32 bytes
+			d-cache-size = <0x8000>;		// L1, 32K
+			i-cache-size = <0x8000>;		// L1, 32K
+			timebase-frequency = <80000000>;
+			bus-frequency = <330000000>;
+			clock-frequency = <800000000>;
+		};
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x0 0x10000000>;
+	};
+
+	soc8560@80000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		device_type = "soc";
+		compatible = "simple-bus";
+		ranges = <0x0 0x80000000 0x100000>;
+		reg = <0x80000000 0x200>;
+		bus-frequency = <330000000>;
+
+		memory-controller@2000 {
+			compatible = "fsl,8540-memory-controller";
+			reg = <0x2000 0x1000>;
+			interrupt-parent = <&mpic>;
+			interrupts = <18 2>;
+		};
+
+		L2: l2-cache-controller@20000 {
+			compatible = "fsl,8540-l2-cache-controller";
+			reg = <0x20000 0x1000>;
+			cache-line-size = <32>;	// 32 bytes
+			cache-size = <0x40000>;	// L2, 256K
+			interrupt-parent = <&mpic>;
+			interrupts = <16 2>;
+		};
+
+		dma@21300 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "fsl,mpc8560-dma", "fsl,eloplus-dma";
+			reg = <0x21300 0x4>;
+			ranges = <0x0 0x21100 0x200>;
+			cell-index = <0>;
+			dma-channel@0 {
+				compatible = "fsl,mpc8560-dma-channel",
+						"fsl,eloplus-dma-channel";
+				reg = <0x0 0x80>;
+				cell-index = <0>;
+				interrupt-parent = <&mpic>;
+				interrupts = <20 2>;
+			};
+			dma-channel@80 {
+				compatible = "fsl,mpc8560-dma-channel",
+						"fsl,eloplus-dma-channel";
+				reg = <0x80 0x80>;
+				cell-index = <1>;
+				interrupt-parent = <&mpic>;
+				interrupts = <21 2>;
+			};
+			dma-channel@100 {
+				compatible = "fsl,mpc8560-dma-channel",
+						"fsl,eloplus-dma-channel";
+				reg = <0x100 0x80>;
+				cell-index = <2>;
+				interrupt-parent = <&mpic>;
+				interrupts = <22 2>;
+			};
+			dma-channel@180 {
+				compatible = "fsl,mpc8560-dma-channel",
+						"fsl,eloplus-dma-channel";
+				reg = <0x180 0x80>;
+				cell-index = <3>;
+				interrupt-parent = <&mpic>;
+				interrupts = <23 2>;
+			};
+		};
+
+		mdio@24520 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "fsl,gianfar-mdio";
+			reg = <0x24520 0x20>;
+
+			phy0: ethernet-phy@0 {
+				interrupt-parent = <&mpic>;
+				interrupts = <5 1>;
+				reg = <0x0>;
+				device_type = "ethernet-phy";
+			};
+			phy1: ethernet-phy@1 {
+				interrupt-parent = <&mpic>;
+				interrupts = <5 1>;
+				reg = <0x1>;
+				device_type = "ethernet-phy";
+			};
+			phy2: ethernet-phy@2 {
+				interrupt-parent = <&mpic>;
+				interrupts = <7 1>;
+				reg = <0x2>;
+				device_type = "ethernet-phy";
+			};
+			phy3: ethernet-phy@3 {
+				interrupt-parent = <&mpic>;
+				interrupts = <7 1>;
+				reg = <0x3>;
+				device_type = "ethernet-phy";
+			};
+		};
+
+		enet0: ethernet@24000 {
+			cell-index = <0>;
+			device_type = "network";
+			model = "TSEC";
+			compatible = "gianfar";
+			reg = <0x24000 0x1000>;
+			local-mac-address = [ 00 00 00 00 00 00 ];
+			interrupts = <29 2 30 2 34 2>;
+			interrupt-parent = <&mpic>;
+			phy-handle = <&phy0>;
+		};
+
+		enet1: ethernet@25000 {
+			cell-index = <1>;
+			device_type = "network";
+			model = "TSEC";
+			compatible = "gianfar";
+			reg = <0x25000 0x1000>;
+			local-mac-address = [ 00 00 00 00 00 00 ];
+			interrupts = <35 2 36 2 40 2>;
+			interrupt-parent = <&mpic>;
+			phy-handle = <&phy1>;
+		};
+
+		mpic: pic@40000 {
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			compatible = "chrp,open-pic";
+			reg = <0x40000 0x40000>;
+			device_type = "open-pic";
+		};
+
+		cpm@919c0 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "fsl,mpc8560-cpm", "fsl,cpm2";
+			reg = <0x919c0 0x30>;
+			ranges;
+
+			muram@80000 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x80000 0x10000>;
+
+				data@0 {
+					compatible = "fsl,cpm-muram-data";
+					reg = <0x0 0x4000 0x9000 0x2000>;
+				};
+			};
+
+			brg@919f0 {
+				compatible = "fsl,mpc8560-brg",
+				             "fsl,cpm2-brg",
+				             "fsl,cpm-brg";
+				reg = <0x919f0 0x10 0x915f0 0x10>;
+				clock-frequency = <133340000>;
+			};
+
+                        cpmpic: pic@90c00 {
+                                interrupt-controller;
+                                #address-cells = <0>;
+                                #interrupt-cells = <2>;
+                                interrupts = <46 2>;
+                                interrupt-parent = <&mpic>;
+                                reg = <0x90c00 0x80>;
+                                compatible = "fsl,mpc8560-cpm-pic", "fsl,cpm2-pic";
+                        };
+
+			serial0: serial@91a40 {
+				device_type = "serial";
+				compatible = "fsl,mpc8560-scc-uart",
+				             "fsl,cpm2-scc-uart";
+				reg = <0x91a40 0x20 0x88200 0x100>;
+				fsl,cpm-brg = <1>;
+				fsl,cpm-command = <0x8c00000>;
+				current-speed = <115200>;
+				interrupts = <42 8>;
+				interrupt-parent = <&cpmpic>;
+			};
+
+			serial1: serial@91a60 {
+				device_type = "serial";
+				compatible = "fsl,mpc8560-scc-uart",
+				             "fsl,cpm2-scc-uart";
+				reg = <0x91a60 0x20 0x88300 0x100>;
+				fsl,cpm-brg = <1>;
+				fsl,cpm-command = <0xce00000>;
+				current-speed = <115200>;
+				interrupts = <43 8>;
+				interrupt-parent = <&cpmpic>;
+			};
+		};
+
+		global-utilities@e0000 {
+			compatible = "fsl,mpc8560-guts";
+			reg = <0xe0000 0x1000>;
+			fsl,has-rstcr;
+		};
+        };
+
+	pci0: pci@80008000 {
+		cell-index = <0>;
+		#interrupt-cells = <1>;
+		#size-cells = <2>;
+		#address-cells = <3>;
+		compatible = "fsl,mpc8540-pcix", "fsl,mpc8540-pci";
+		device_type = "pci";
+		reg = <0x80008000 0x1000>;
+		clock-frequency = <66666666>;
+                interrupts = <24 2>;
+
+		interrupt-parent = <&mpic>;
+                ranges = <0x02000000            /* Flag for IO space. */
+                          0x00000000 0x40000000 /* PCI address. */
+                          0x40000000            /* Address to map into CPU space. */
+                          0x00000000 0x01000000 /* Size. */
+
+                          0x01000000            /* Flag for memory space. */
+                          0x00000000 0x48000000 /* PCI address. */
+                          0x48000000            /* Address to map into CPU space. */
+                          0x00000000 0x01000000 /* Size. */
+                          >;
+                interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
+
+                /* This map is for the security processor sitting on IDSEL 17
+                 * and uses external interrupt 8. The numbers (in order) are:
+                 *   - IDSEL (top 5 bits)
+                 *   - unused
+                 *   - unused
+                 *   - interrupt number (INTA)
+                 *   - parent interrupt controller
+                 *   - interrupt number (EXT8)
+                 *   - sense level (active low)
+                 */
+		interrupt-map = <
+			/* IDSEL 0x11 func 0 - PCI slot 1 */
+			0x8800 0x0 0x0 0x1 &mpic 0x8 0x1
+                        >;
+	};
+
+        picoArray0: picoArray@d0000000 {
+                device_type = "picoArray";
+                compatible = "picoArray";
+                #address-cells = <1>;
+                #size-cells = <1>;
+                interrupts = <1 1>;
+                interrupt-parent = <&mpic>;
+                cell-index = <0>;
+
+		procif = <0xd0000000 0x80>;
+                dma_base = <0xc0000000 0x40000>;
+                ccr_base = <0xd0002000 0x80>;
+                dma_spacing = <0x10000>;
+        };
+
+        picoArray1: picoArray@d0004000 {
+                device_type = "picoArray";
+                compatible = "picoArray";
+                #address-cells = <1>;
+                #size-cells = <1>;
+                interrupts = <2 1>;
+                interrupt-parent = <&mpic>;
+                cell-index = <1>;
+
+		procif = <0xd0004000 0x80>;
+                dma_base = <0xc0040000 0x40000>;
+                ccr_base = <0xd0006000 0x80>;
+                dma_spacing = <0x10000>;
+        };
+
+        picoArray2: picoArray@d0008000 {
+                device_type = "picoArray";
+                compatible = "picoArray";
+                #address-cells = <1>;
+                #size-cells = <1>;
+                interrupts = <7 1>;
+                interrupt-parent = <&mpic>;
+                cell-index = <2>;
+
+		procif = <0xd0008000 0x80>;
+                dma_base = <0xc0080000 0x40000>;
+                ccr_base = <0xd000a000 0x80>;
+                dma_spacing = <0x10000>;
+        };
+
+        picoArray3: picoArray@d000c000 {
+                device_type = "picoArray";
+                compatible = "picoArray";
+                #address-cells = <1>;
+                #size-cells = <1>;
+                interrupts = <8 1>;
+                interrupt-parent = <&mpic>;
+                cell-index = <3>;
+
+		procif = <0xd000c000 0x80>;
+                dma_base = <0xc00c0000 0x40000>;
+                ccr_base = <0xd000e000 0x80>;
+                dma_spacing = <0x10000>;
+        };
+};

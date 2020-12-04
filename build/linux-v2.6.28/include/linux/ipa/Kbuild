@@ -1,0 +1,24 @@
+################################################################################
+# 
+# Copyright (c) 2009 ip.access Ltd.
+#
+#  This program is free software; you can redistribute  it and/or modify it
+#  under  the terms of  the GNU General  Public License as published by the
+#  Free Software Foundation;  either version 2 of the  License, or (at your
+#  option) any later version.
+#
+# 22 Apr 2009 Created by Simon D Hughes.
+##############################################################################
+# Filename: 
+##############################################################################
+header-y += config_ipaccess.h
+header-y += config_ipaccess_i686_pc_linux_gnu.h
+header-y += config_ipaccess_ip202ff.h
+header-y += config_ipaccess_ip202ff_xbplus.h
+header-y += config_ipaccess_ip202ff_xc.h
+header-y += config_ipaccess_ip302ff.h
+header-y += ad7995.h
+header-y += cpetd.h
+header-y += max6662.h
+header-y += dac7512.h
+header-y += ipa_keystream.h

@@ -1,0 +1,60 @@
+################################################################################
+# 
+# Copyright (c) 2009 ip.access Ltd.
+#
+#  This program is free software; you can redistribute  it and/or modify it
+#  under  the terms of  the GNU General  Public License as published by the
+#  Free Software Foundation;  either version 2 of the  License, or (at your
+#  option) any later version.
+#
+# 22 Apr 2009 Created by Simon D Hughes.
+##############################################################################
+# Filename: 
+##############################################################################
+
+#
+# IPAccess device drivers
+#
+
+menu "IP Access Drivers"
+
+config IPACCESS
+    tristate
+
+config IPACCESS_CPETD
+    tristate "cpetd support"
+    select IPACCESS
+    ---help---
+      The CPE Timer Device Driver. This device driver is used to give
+      fine grained timer ticks to user mode applications e.g. 3g ctrl
+      and data apps.
+
+config IPACCESS_DEBUG
+    tristate "ipa_debug support"
+    select IPACCESS
+    ---help---
+      Support for the 3GAP FPGA logger card.
+
+config IPACCESS_LED
+    tristate "leddriver support"
+    select IPACCESS
+    ---help---
+      Support for the 3GAP ip202ff xbplus & xd leds.
+
+config IPACCESS_CRYPTO
+    tristate "crypto offload for IPsec"
+    default m
+    help
+      Enable platform support for using the PicoArray for IPsec 
+      crypto and auth offload
+
+config IPACCESS_FPGA_DEBUG
+    bool "kernel debug via FPGA"
+    ---help---
+      This option allows kernel functions and driver modules to output trace
+      information to the FPGA debug card.  It also allows access to the hires
+      timer maintained by the CPETD.  To enable these functions, both the
+      cpetd and ipa_debug driver modules must be loaded, though the kernel will
+      still function correctly without them.
+
+endmenu

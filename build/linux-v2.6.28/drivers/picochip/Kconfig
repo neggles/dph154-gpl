@@ -1,0 +1,74 @@
+# $picoChipHeaderSubst$
+#
+# picoChip device drivers
+#
+
+menu "picoChip Drivers"
+
+config PICOCHIP
+    tristate
+
+config PICOHDP_CPLD
+    tristate "HDP CPLD Support"
+    depends on PICOHDP || PICOHDP203
+    ---help---
+      This driver controls periperhals managed via the picoHDP main CPLD
+
+config PICOCPE20X_FPGA
+    tristate "CPE20X FPGA Support"
+    depends on ARCH_FIRECRACKER && SPI_FIRECRACKER
+    ---help---
+      This driver exports an interface for accessing the CPE20x FPGAs. 
+      The driver uses bit-bashed SPI interface via GPIO pins.
+      Note: The kernel uses this driver to implement a hard reset. If
+      it is not installed, the kernel will not reset the board.
+
+config PICOIF
+    tristate "picoIf driver"
+    ---help---
+      This driver provides a kernelspace API for accessing picoArray devices
+      and a userspace interface through /dev/picoif
+
+config PICOIF_DMAPOOL
+    bool "Picoif DMA buffer pooling"
+    depends on PICOIF
+    ---help---
+      This option enables pooling and reuse of a number of DMA coherent memory
+      buffers by the transport channels.
+
+config PICOIF_PC203
+    bool "PC203 picoIf support"
+    select FSL_DMA
+    depends on PICOIF && PICOHDP203
+    ---help---
+      Selecting yes here enables PC203 support in picoIf.
+
+config PICOIF_PC202
+    bool "PC202/5 picoIf support"
+    depends on PICOIF && ARCH_FIRECRACKER
+    ---help---
+      Selecting yes here enables PC202 and PC205 support in picoIf.
+
+config PICOIF_PC302
+    bool "PC302 picoIf support"
+    depends on PICOIF && ARCH_PC302
+    ---help---
+      Selecting yes here enables PC302 support in picoIf.
+
+config PICOIF_DEFAULT_DEBUG_LEVEL
+    int "Default debugging level for the picoIf driver (0 = quiet, 9 = noisy)"
+    default "1"
+    help
+      This sets the default debug verbosity of the driver at load time. The
+      values for each component may then be ajusted with the *lvl entries in
+      /debug/picoif/.
+
+config PICOIF_DEBUG_TO_CONSOLE
+    bool "Print picoIf debug messages to the console"
+    default false
+    help
+      Enabling this causes picoIf debug messages to be printed to the console
+      in addition to the debug log in /debug/picoconnect/log. This is mainly
+      useful when working on the drivers themselves.
+
+endmenu

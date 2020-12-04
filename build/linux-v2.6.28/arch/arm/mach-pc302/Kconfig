@@ -1,0 +1,37 @@
+################################################################################
+# 
+# Copyright (c) 2009 ip.access Ltd.
+#
+#  This program is free software; you can redistribute  it and/or modify it
+#  under  the terms of  the GNU General  Public License as published by the
+#  Free Software Foundation;  either version 2 of the  License, or (at your
+#  option) any later version.
+#
+# 22 Apr 2009 Created by Simon D Hughes.
+##############################################################################
+# Filename: 
+##############################################################################
+# $picoChipHeaderSubst$
+
+menu "PC302 platform type"
+	depends on ARCH_PC302
+
+config MACH_PC7302
+	bool "Support PC7302 Board"
+	help
+          Include support for the picoChip PC7302 platform.
+          
+config IP302FF_XC
+	bool "Support IPA changes to XC"
+	help
+          Include support for custom changes to the IPA CPE XC Board based on PC7302.
+
+config PC302_ASYNC_OPROF
+	bool "Support async oprofile sampling (Uses Timer 2)"
+	help
+	  This controls whether to use a separate hardware timer for oprofile
+	  sampling rather than the system tick timer.  If this is selected then
+	  the oprofile sample rate will eventually gather samples from a range
+	  of points within the system tick.
+
+endmenu

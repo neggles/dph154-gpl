@@ -1,0 +1,114 @@
+#
+# DMA engine configuration
+#
+
+menuconfig DMADEVICES
+	bool "DMA Engine support"
+	depends on !HIGHMEM64G && HAS_DMA
+	help
+	  DMA engines can do asynchronous data transfers without
+	  involving the host CPU.  Currently, this framework can be
+	  used to offload memory copies in the network stack and
+	  RAID operations in the MD driver.  This menu only presents
+	  DMA Device drivers supported by the configured arch, it may
+	  be empty in some cases.
+
+if DMADEVICES
+
+comment "DMA Devices"
+
+config INTEL_IOATDMA
+	tristate "Intel I/OAT DMA support"
+	depends on PCI && X86
+	select DMA_ENGINE
+	select DCA
+	help
+	  Enable support for the Intel(R) I/OAT DMA engine present
+	  in recent Intel Xeon chipsets.
+
+	  Say Y here if you have such a chipset.
+
+	  If unsure, say N.
+
+config INTEL_IOP_ADMA
+	tristate "Intel IOP ADMA support"
+	depends on ARCH_IOP32X || ARCH_IOP33X || ARCH_IOP13XX
+	select DMA_ENGINE
+	help
+	  Enable support for the Intel(R) IOP Series RAID engines.
+
+config DW_DMAC
+	tristate "Synopsys DesignWare AHB DMA support"
+	depends on AVR32
+	select DMA_ENGINE
+	default y if CPU_AT32AP7000
+	help
+	  Support the Synopsys DesignWare AHB DMA controller.  This
+	  can be integrated in chips such as the Atmel AT32ap7000.
+
+config PC302_DMA
+    tristate "PC302 DMA support"
+    depends on ARCH_PC302
+    select DMA_ENGINE
+    ---help---
+      This driver provides support for the Synopsys DesignWare AHB DMA controllers
+      present on the PC302. 
+
+config PC302_DMA_DEBUG_LEVEL
+        int "PC302 driver debugging verbosity (0 = quiet, 9 = noisy)"
+        default "0"
+        depends on PC302_DMA
+        help
+          This controls the amount of debugging messages produced by the
+          PC30x DMA driver. A value of zero builds a driver that has as default
+          no debug code.
+
+config FSL_DMA
+	tristate "Freescale Elo and Elo Plus DMA support"
+	depends on FSL_SOC
+	select DMA_ENGINE
+	---help---
+	  Enable support for the Freescale Elo and Elo Plus DMA controllers.
+	  The Elo is the DMA controller on some 82xx and 83xx parts, and the
+	  Elo Plus is the DMA controller on 85xx and 86xx parts.
+
+config MV_XOR
+	bool "Marvell XOR engine support"
+	depends on PLAT_ORION
+	select DMA_ENGINE
+	---help---
+	  Enable support for the Marvell XOR engine.
+
+config DMA_ENGINE
+	bool
+
+comment "DMA Clients"
+	depends on DMA_ENGINE
+
+config NET_DMA
+	bool "Network: TCP receive copy offload"
+	depends on DMA_ENGINE && NET
+	default (INTEL_IOATDMA || FSL_DMA)
+	help
+	  This enables the use of DMA engines in the network stack to
+	  offload receive copy-to-user operations, freeing CPU cycles.
+
+	  Say Y here if you enabled INTEL_IOATDMA or FSL_DMA, otherwise
+	  say N.
+
+config DMATEST
+	tristate "DMA Test client"
+	depends on DMA_ENGINE
+	help
+	  Simple DMA test client. Say N unless you're debugging a
+	  DMA Device driver.
+
+config PC302_DMA_TEST
+    tristate "PC30x DMA test driver"
+    depends on PC302_DMA && DMATEST
+    ---help---
+      This driver provides a number of basic tests for the DMA controllers
+      present on the PC302. The tests are run on module load and can be 
+      targetted to run on DMAC 0 or 1.
+
+endif

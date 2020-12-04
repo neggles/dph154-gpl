@@ -1,0 +1,310 @@
+Copyright MontaVista Software Ltd.
+Author: Dean Jenkins
+
+Linux PicoArray Crypto driver change notes
+
+Codedrop 20090129
+-----------------
+
+This codedrop supports Software and Hardware based Encryption/Decryption
+and/or Authentication.
+
+The picoArray firmware IPsecFull_v3.pa has been used to test the driver.
+
+A new function called check_for_free_bd() was added. This checks whether a
+given BDR contains any free BDs. check_for_free_bd() is called from inside
+picocrypto_add_to_bdr() to test that a BD is available before allocating a
+PDU. This avoids unnecessary PDU allocations when the BDR is full so reducing
+the probability of running out of PDUs.
+
+
+Codedrop 20090121
+-----------------
+
+This codedrop supports Software and Hardware based Encryption/Decryption
+and/or Authentication.
+
+The picoArray firmware IPsecFull_v1.pa has been used to test the driver.
+This pa firmware supports encryption/decryption and/or authenication.
+Note that encryption/decryption with non authenication does not work
+because the firmware erroneously includes the "empty" 16 bytes of the IV field.
+
+A bug was found in picocrypto_add_to_bdr() that calculated the wrong length
+of the encryption/decryption length variable in the BD. The calculation used
+cryptlen supplied from the Kernel's AEAD request. It appears that the
+meanining of cryptlen depends on whether the request is for encryption or
+decryption. For encryption cryptlen does not include the length of the
+authentication field/tag but in decryption it does. The private crypto
+context structure was modified to indicate the enc/dec direction allowing
+other functions to use the correct calculation. This also affected the
+reading out of the completed data from SRAM because the authentication field
+has to be copied out only for encryption.
+
+A bug was found in that mark_bd_sram_free() was never called during freeing
+of a BD. The only side effect of this missing call relates to any human
+analysis of the SRAM BD contents because the status always remained at
+completed after the BD had been freed.
+
+A bug was found in alloc_sram_pdu() that caused the function to incorrectly
+indicate that there was no room left in the PDU pool for a PDU allocation.
+This was due to the check for the "DEAD band" at the end of the pool not
+allowing for the next PDU pointer to be ahead of the oldest PDU pointer.
+Consequently on rare occasions when the oldest PDU pointer was inside the
+dead band and the next PDU pointer was also in the dead band then the request
+could sometimes be erroneously rejected. The error occurs when the number of
+allocated PDUs is low eg. < 5
+
+Added #define USE_TWO_BDRS to select between using 1 or 2 BDRs. The default
+is that USE_TWO_BDRS is defined.
+
+Added #define ENABLE_BDR_PROCESSING_AFTER_ENC_DEC to attempt to process
+completed BDs at the end of each enc/dec request. This still resulted in
+running out of PDUs and/or BDs under load testing using bw_tcp.
+The default is that ENABLE_BDR_PROCESSING_AFTER_ENC_DEC is not defined.
+This implementation does not check that it is processing the results
+of the current enc/dec request so effectively is a synchronous call.
+A modification could be to try BD processing before actioning the
+enc/dec request to avoid that complication.
+
+Under heavy load it appears that the driver runs out of either PDUs or BDs.
+Doing an SRAM dump shows that all in use PDUs are associated with
+completed BDs, however, the memory snapshot does not halt the picoArray
+so there is time for the picoArray to complete all jobs during the dump.
+This makes analysis tricky.
+
+Fixed the double generation of sysfs output. This was due to a regression
+in the sysfs return values.
+
+
+Codedrop 20090119
+-----------------
+
+This codedrop supports Software Based Encryption/Decryption and/or
+Authentication. All 4 combinations tested using IPsec.
+
+#define APPLICATION_NOT_AVAILABLE is now undefined so upon loading the driver
+it does not try to OPEN the picoArray. The sysfs open_pico must be used to
+OPEN the picoArray. The driver will load itself into the Kernel regardless
+of the presence of the picoArray firmware. If the open_pico fails then the
+driver continues in Software Fallback mode for the crypto.
+
+The picoArray firmware NULL/NON ipsec_dev4.pa picoArray has been used to test
+the driver.
+
+A bug was found in write_sram_context_keys() that prevented the keys being
+written to the SRAM when in ENC/DEC-NON or NULL-AUTH modes. Now fixed.
+
+Added a sysfs file call show_mode to show the current operating mode
+eg. "HW mode", "HW mode (switching)", "SW mode (switching)" or "SW mode".
+
+REMINDER: A kernel patch in kernel_changes/patches/crypto_no_iv_hash_crash.patch 
+needs to be applied to the Kernel to avoid a crash when using NULL encryption
+with authentication enabled. See the kernel_changes/patches/README.txt for
+details.
+
+Modified the tpicocrypto test mode to add unit tests for
+ENC/DEC-AUTH. Therefore, all 4 combinations are now supported
+eg. NULL-NON, NULL-AUTH, ENC/DEC-NON and ENC/DEC-AUTH.
+
+Some code tidy-ups have been made.
+
+By agreement with ip.access, ESN is not supported due to Kernel and IKEv2
+limitations.
+
+
+Codedrop 20090114
+-----------------
+
+This codedrop supports Software Based Encryption/Decryption and/or
+Authentication. All 4 combinations tested using IPsec.
+
+As the driver starts up, it probes for the presence of the picoArray firmware.
+If suitable firmware is found then the driver switches to Hardware mode,
+otherwise the driver uses Software Fallback mode. This test can be removed
+by undef the #define APPLICATION_NOT_AVAILABLE. Default: APPLICATION_NOT_AVAILABLE
+is defined.
+
+The picoArray firmware NULL/NON ipsec_dev4.pa picoArray has been used to test
+the driver.
+
+A kernel patch in kernel_changes/patches/crypto_no_iv_hash_crash.patch needs to be
+applied to the Kernel to avoid a crash when using NULL encryption with 
+authentication enabled. See the kernel_changes/patches/README.txt for details.
+
+Note that Sofware based encryption/decryption uses synchronous mode because it is
+not offloaded. There is no flow control so high through-put over Ethernet will
+cause an overload of the system.
+
+Note that when IPsec is used, the driver generates random data for the IV field
+contents for encryption, both HW and SW.
+
+The freeing of the SW AEAD request has been resolved and 1,000,000 pings were
+tested ( some pings lost, reasons unknown ) over IPsec using Encryption and 
+Authentication. There was no sign of a memory leak.
+
+Open and Close has been tested while pinging over IPsec using NULL encryption
+and NON authentication. No packets lost during transition phase. Also loaded
+the magic_Dev0.pa firmware and that did not seem to corrupt the SRAM.
+
+Modified the tpicocrypto test mode to add unit tests for
+NULL-NON, NULL-AUTH, ENC/DEC-NON
+
+Note that tpicocrypto specifies IV field data and so calls non-giv encrypt
+functions. Therefore, this does not test fully the encryption routines used by
+ESP in IPsec operation.
+
+
+Codedrop 20090106
+-----------------
+
+This codedrop requires some picoArray firmware to be available. The driver
+has been tested against the NULL/NON ipsec_dev4.pa picoArray firmware.
+
+Improved the OPEN/CLOSE mechanism as described below:
+
+Added a mutex between accesses to the SRAM state variables to prevent clashes
+between driver instigated accesses and sysfs accesses.
+
+For OPEN_REQ, if the picoArray is already OPENED then the OPEN_REQ is not sent
+and nothing is done, otherwise the OPEN_REQ is sent eg. for READY and CLOSED
+confirmed states.
+
+For CLOSE_REQ, if the picoArray is currently in the OPENED state then the
+CLOSE_REQ is sent otherwise nothing is done.
+
+During driver start-up there is a check to make sure that the picoArray is
+not in the OPENED state. This is an unlikely error condition but ensures that
+the picoArray is either in the READY or CLOSED confirmed states to allow the
+SRAM to be (re-)initialised.
+  
+There is test code at the end of the driver's start-up to force the piocArray to
+be placed in the OPENED state. This can be compiled-in using the #define
+APPLICATION_NOT_AVAILABLE. Normally the application will request the picoArray
+to be opened. Default: #define APPLICATION_NOT_AVAILABLE is defined.
+
+The sysfs file "close_pico" now checks that no BDs are active before calling
+the CLOSE_REQ function. If any BDs remain active after a time-out then the
+"close_pico" is aborted. Also the BDRs are re-initialised after successfully
+changing the picoArray to the CLOSED state. This ensures that the current BD
+pointers within the driver are now pointing to the start of each BDR
+matching the picoArray's pointers after the CLOSE_REQ.
+
+Limitation: Make sure no IP traffic is flowing before requesting a "close_pico"
+because there is insufficient locking protection within the "close_pico"
+function to stop new BDs being inserted by the kernel during the CLOSE_REQ
+procedure. As a consequence of resetting the BDRs it is possible that
+orphan PDUs can occur and AEAD reqs being lost thus resulting in corruption.
+This limitation will disappear when software fallback is implemented as it
+will stop new BDs from being inserted during the "close_pico" operation.
+
+A new #define ENABLE_NO_BD_NO_PDU_PROCESSING has been added to enable recovery
+processing when no BDs or PDUs are available for a new encryption/decryption
+job. This recovery mechansim was added in codedrop 20081216. Default: 
+ENABLE_NO_BD_NO_PDU_PROCESSING is not defined so recovery processing is
+disabled in this codedrop therefore expect to see some dropped packets under
+heavy loads.
+
+
+Codedrop 20081216
+-----------------
+
+Added code in picocrypto_add_to_bdr() to handle the situation where no PDUs
+and/or BDs are available. If no PDUs are available then an attempt is made
+to try to process the BDR that contains the oldest PDU therefore freeing a
+PDU. If no BDs are avaiable then the current BD of the current BDR has attempt
+made on it to try to process the BD and hence free up a BD.  
+
+Different locking mechanisms have been investigated and it has been determined
+that the encrypt and decrypt calls from the Kernel are in an Interrupt context
+(ATOMIC) eg. tasklet or ISR. This means that these threads cannot sleep and
+must proceed to completion. Therefore turning interrupts off and on is the only
+way to prevent these threads interrupting the async event code. spin_locks have
+no effect on a single core processor although some documents says they do inhibit
+preemption. This means that the spin_lock_irqsave() and spin_unlock_irqrestore()
+are used. Note that this disables interrupts and that might be not be desirable
+for doing all SRAM processing.
+
+Found a re-cursion / re-entrancy issue. Sometimes the Kernel callback for
+completing a crypto work item causes a decrypt or encrypt to be fired off
+and this results in re-cursion / re-entrancy of the decrypt or encrypt 
+functions. This occurs despite the interrupts being off. In others, it is
+the all same thread. This issue was observed under heavy processor load
+with a ping -f running and a bw_tcp running on the gateway. It was observed that
+various Kernel warnings on bw_tcp were generated saying sleeping whilst atomic
+and that is not allowed.
+
+Code has been added to handle the re-cursion / re-entrancy issue but everything
+runs with interrupts off so may not be desireable.
+
+Basic handling of the open / close picoArray mechanism has been added and can be
+controlled via the sysfs interface eg.
+
+To request open
+echo 1 > /sys/bus/platform/drivers/pico-crypto-ipsec/open_pico
+
+To request close
+ echo 1 > /sys/bus/platform/drivers/pico-crypto-ipsec/close_pico
+
+To get the confirmed status
+cat /sys/bus/platform/drivers/pico-crypto-ipsec/pico_status
+
+Note that the driver has no locking for this interface and all are blocking.
+Also the driver tries to close and open the picoArray at install time. But
+the sysfs interface is ignored by the rest of the driver and will assume that
+the picoArray is running. In other words, close does not currently make
+sure that all BDs have been processed before closing the picoArray.
+
+Other sysfs debug options
+
+To force all BDs (AEAD Reqs) to be processed
+echo 1 > /sys/bus/platform/drivers/pico-crypto-ipsec/clear_aead_reqs
+
+To dump the SRAM contents
+echo 1 > /sys/bus/platform/drivers/pico-crypto-ipsec/dump_sram
+
+Note the dump is not protected against SRAM changes from Kernel theads and is
+therefore not a true snapshot.
+
+
+Codedrop 20081211
+-----------------
+
+Copying Crypto data to and from the PDU is now done 4 bytes at time and a check
+has been added to make sure that the scatterlist pointers are 4 bytes aligned.
+
+The WRAP_BIT value is derived from the BD allocation function to avoid a
+read-modify-write of the Control Flags register. Note that on freeing
+a BD, a read-modify-write of the Control Flags register is still required
+because the free function cannot know whether it is the end BD of the pool.
+
+Added support for freeing PDUs and allowing PDUs to be freed randomly.
+Note that the freed memory is not reuseable until the oldest PDU pointer
+reaches this position within the PDU pool. The PDU now has an 8 byte header
+(for ARM only) prepended to the PDU structure to manage a next PDU pointer
+and a free/in_use flag.
+
+Improved the dropped packet debug to show lack of PDUs or BDs.
+
+Using 2 BDRs; BDR #1 is used for encrypt and BDR #2 is used for decrypt.
+Both BDR #1 and #2 contain 40 BDs.
+
+Added picoArray OPEN and CLOSE access functions as per Paul's version 0.5 SRAM
+API doc. The driver will attempt to close and open the picoArray at install
+time but the error code will be inhibited to allow the driver to operate.
+
+Added #define PICO_FIRMWARE_NOT_AVAILABLE to run the driver without
+the picoArray firmware being present. If undefined then firmware will
+need to support the OPEN and CLOSE mechanism plus the PDU completed
+flag update.
+
+Added spin_locking and irq off/on protection between encrypt, decrypt and async_test
+threads. This means that the async polling work queue will process all completed BDs
+before allowing encrypt or decrypt to insert a new BD. This mechanism helps provide
+CPU cycles to the polling thread but it needs reviewing as mutex's may be more
+appropriate at the expense of context switching.
+
+
+Codedrop 20081204
+-----------------
+
+Original prototype driver

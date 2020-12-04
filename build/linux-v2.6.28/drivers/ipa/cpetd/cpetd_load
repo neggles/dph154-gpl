@@ -1,0 +1,58 @@
+#!/bin/sh
+
+################################################################################
+# 
+# Copyright (c) 2009 ip.access Ltd.
+#
+#  This program is free software; you can redistribute  it and/or modify it
+#  under  the terms of  the GNU General  Public License as published by the
+#  Free Software Foundation;  either version 2 of the  License, or (at your
+#  option) any later version.
+#
+# 22 Apr 2009 Created by Simon D Hughes.
+##############################################################################
+# Filename: 
+##############################################################################
+
+# User can supply the number of devices to create - defautls to 1
+if test $1
+then
+    numDevs=$1
+    if [ ${numDevs} -eq 0 ]
+    then
+        numDevs=1
+    fi
+else
+    numDevs=1
+fi
+
+module="cpetd"
+device="cpetd"
+group="root"
+mode="664"
+
+# remove stale nodes
+rm -f /dev/${device}[0-9] /dev/${device}
+
+# invoke insmod with all arguments we got
+# and use a pathname, as newer modutils don't look in . by default
+/sbin/insmod -f ./$module.ko cpetdNumDevs=${numDevs} || exit 1
+
+major=`cat /proc/devices | awk "\\$2==\"$module\" {print \\$1}"`
+
+dnum=0
+while [ ${dnum} -lt ${numDevs} ]
+do
+    if test ${dnum} -lt ${numDevs}
+    then
+        mknod /dev/${device}${dnum} c $major ${dnum}
+
+        # give appropriate group/permissions
+        chgrp $group /dev/${device}${dnum}
+        chmod $mode  /dev/${device}${dnum}
+    fi
+    let dnum++
+done
+
+ln -sf ${device}0  /dev/${device}
+

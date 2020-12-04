@@ -1,0 +1,62 @@
+################################################################################
+# 
+# Copyright (c) 2009 ip.access Ltd.
+#
+#  This program is free software; you can redistribute  it and/or modify it
+#  under  the terms of  the GNU General  Public License as published by the
+#  Free Software Foundation;  either version 2 of the  License, or (at your
+#  option) any later version.
+#
+# 22 Apr 2009 Created by Simon D Hughes.
+##############################################################################
+# Filename: 
+##############################################################################
+
+THIS = cpetd
+
+###
+# N.B: Must not strip kernel modules!!!
+###
+IPKG_STRIP_EXECUTABLES=false
+
+###
+# Directory definitions
+###
+DIR_IPKG              = ipkg
+
+###
+# iPackage
+###
+IPACKAGE = $(DIR_IPKG)/cpetd.ipk
+
+DIR_IPKG_DEST = opt/ipaccess/drivers
+
+IPKG_COMPONENTS = cpetd_load \
+                  cpetd_unload \
+                  cpetd.ko
+
+.PHONY:all
+all: $(IPACKAGE)
+
+.PHONY:clean
+clean:
+	make -f Makefile.pc clean
+	$(RM) $(IPACKAGE)
+
+
+cpetd.ko:
+	@make -f Makefile.pc
+
+                  
+        
+
+###
+# Rule Makefiles
+###
+include $(DIR_MAKEFILES)/tools_ipackage.mak
+
+
+
+
+
+

@@ -1,0 +1,63 @@
+################################################################################
+# 
+# Copyright (c) 2009 ip.access Ltd.
+#
+#  This program is free software; you can redistribute  it and/or modify it
+#  under  the terms of  the GNU General  Public License as published by the
+#  Free Software Foundation;  either version 2 of the  License, or (at your
+#  option) any later version.
+#
+# 22 Apr 2009 Created by Simon D Hughes.
+##############################################################################
+# Filename: 
+##############################################################################
+# $picoChipHeaderSubst$
+
+menu "Firecracker platform type"
+	depends on ARCH_FIRECRACKER
+
+config MACH_PC72052_I10_REVB
+	bool "Support the picoChip PC7202/PC7205 Platforms"
+	help
+	  Include support for the picoChip PC7202/PC7205 Platforms.
+
+config MACH_PC7802
+	bool "Support the picoChip PC7802 Platform"
+	help
+	  Include support for the picoChip PC7802 Platform.
+
+config IP202FF_XC
+	bool "Support IPA changes to XC"
+	help
+	  Include support for custom changes to the IPA CPE XC Board based on Firecracker REVB.
+
+config FIRECRACKER_DMA_TEST
+	bool "Firecracker DMA driver test module (dma_test)"
+	help
+	  Include the firecracker DMA test module.
+
+config FIRECRACKER_DMA_DEBUG
+	int "Firecracker DMA driver debugging verbosity (0 = quiet, 9 = noisy)"
+	default "0"
+	help
+	  This controls the amount of debugging messages produced by the
+	  firecracker DMA driver. A value of zero builds a driver without
+	  debug code.
+
+config FIRECRACKER_EMAC_DEBUG
+	int "Firecracker EMAC driver debugging verbosity (0 = quiet, 9 = noisy)"
+	default "0"
+	help
+	  This controls the amount of debugging messages produced by the
+	  firecracker EMAC driver. A value of zero builds a driver without
+	  debug code.
+
+config FIRECRACKER_ASYNC_OPROF
+    bool "Support async oprofile sampling (Uses Timer 2)"
+	help
+	  This controls whether to use a separate hardware timer for oprofile
+	  sampling rather than the system tick timer.  If this is selected then
+	  the oprofile sample rate will eventually gather samples from a range
+	  of points within the system tick.
+
+endmenu
